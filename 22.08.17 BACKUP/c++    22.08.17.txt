@@ -1,0 +1,744 @@
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include <iostream>
+#include <string.h>
+#include <fstream>
+
+#include <streambuf>
+#include <sstream>
+#include "opencv/cv.h"
+
+#define WINVER 0x0500
+
+#include <Windows.h>
+
+#include <WinUser.h>
+
+#include <shellAPI.h>
+
+
+using namespace std;
+using namespace cv;
+
+
+/// Global Variables
+Mat img; Mat templ; Mat result; Mat but;
+Mat button;
+Mat female;
+Mat male;
+Point matchLoc;
+
+WORD key;
+
+int id;
+char name[20];
+//string name;
+char designation[20];
+//string designation;
+int salary;
+char gender[10];
+
+
+int temp = 0;
+int start = 0;
+
+//Mat imgref, templref;
+
+char* image_window = "Source Image";
+//char* result_window = "Result window";
+
+
+int match_method;
+int max_Trackbar = 5;
+
+int l = 0;
+
+
+/// Function Headers
+void MatchingMethod(int, void*);
+//void MouseEvents();
+void FileReader();
+template <typename T>
+WORD virtualKey(T a);
+void keyEvent();
+void keyboardPress();
+void buttonClick();
+void femaleRadioButton();
+void maleRadioButton();
+
+/** @function main */
+int main()
+{
+	HWND hwnd1 = GetConsoleWindow();
+	ShowWindow(hwnd1, 0);
+
+	/// Load image and template
+	img = imread("pleasework.bmp", 1);
+	templ = imread("textbox.bmp", 1);
+	button = imread("button.bmp", 1);
+	female = imread("female.bmp", 1);
+	male = imread("male.bmp", 1);
+
+	/// Create windows
+	//namedWindow(image_window, WINDOW_NORMAL);
+	//namedWindow(result_window, CV_WINDOW_AUTOSIZE);
+
+	/// Create Trackbar
+	char* trackbar_label = "Method: \n 0: SQDIFF \n 1: SQDIFF NORMED \n 2: TM CCORR \n 3: TM CCORR NORMED \n 4: TM COEFF \n 5: TM COEFF NORMED";
+	createTrackbar(trackbar_label, image_window, &match_method, max_Trackbar, MatchingMethod);
+
+	STARTUPINFO startInfo = { 0 };
+	PROCESS_INFORMATION processInfo = { 0 };
+
+	BOOL bSuccess = CreateProcess(TEXT("C:\\Users\\ADITI\\Documents\\Visual Studio 2017\\Projects\\MakeItWorkConsole\\MakeItWorkConsole\\bin\\Debug\\MakeItWorkConsole.exe"), NULL, NULL, NULL, FALSE, NULL, NULL, NULL, &startInfo, &processInfo);
+
+	Sleep(2000);
+
+	FileReader();
+
+	//MatchingMethod(0, 0);
+	
+	//femaleRadioButton();
+
+	//maleRadioButton();
+
+	//MouseEvents();
+
+	//Sleep(3000);
+
+	//buttonClick();
+
+	//MessageBox(NULL, "Back in Main", NULL,NULL);
+	//waitKey(0);
+
+	HWND hWnd2 = FindWindow(NULL, TEXT("EMPLOYEE DETAILS"));
+
+	PostMessage(hWnd2, WM_CLOSE, 0, 0);
+	 
+	return 0;
+}
+
+void femaleRadioButton()
+{
+
+	//Mat img_display;
+	//img.copyTo(img_display);
+
+
+	int result_cols = img.cols - female.cols + 1;
+	int result_rows = img.rows - female.rows + 1;
+
+	result.create(result_rows, result_cols, CV_32FC1);
+
+
+	matchTemplate(img, female, result, CV_TM_CCOEFF_NORMED);
+	
+	double minval, maxval;
+	cv::Point minloc, maxloc;
+	cv::minMaxLoc(result, &minval, &maxval, &minloc, &maxloc, Mat());
+
+	/*
+	cv::rectangle(
+		img_display,
+		maxloc,
+		cv::Point(maxloc.x + female.cols, maxloc.y + female.rows),
+		CV_RGB(0, 255, 0), 2);
+	*/
+
+	Sleep(250);
+
+	//imshow(image_window, img_display);
+	//waitKey(0);
+
+	SetCursorPos(maxloc.x -195, maxloc.y -130);
+
+	mouse_event(0x00000002, 0, 0, 0, 0);
+
+	Sleep(10);
+
+	mouse_event(0x00000004, 0, 0, 0, 0);
+
+	Sleep(250);
+
+}
+
+void maleRadioButton()
+{
+	//Mat img_display;
+	//img.copyTo(img_display);
+
+
+	int result_cols = img.cols - male.cols + 1;
+	int result_rows = img.rows - male.rows + 1;
+
+	result.create(result_rows, result_cols, CV_32FC1);
+
+
+	matchTemplate(img, male, result, CV_TM_CCOEFF_NORMED);
+	
+	double minval, maxval;
+	cv::Point minloc, maxloc;
+	cv::minMaxLoc(result, &minval, &maxval, &minloc, &maxloc, Mat());
+
+	/*
+	cv::rectangle(
+		img_display,
+		maxloc,
+		cv::Point(maxloc.x + female.cols, maxloc.y + female.rows),
+		CV_RGB(0, 255, 0), 2);
+
+	*/
+	Sleep(250);
+
+	//imshow(image_window, img_display);
+	//waitKey(0);
+
+	SetCursorPos(maxloc.x - 205, maxloc.y - 130);
+
+	mouse_event(0x00000002, 0, 0, 0, 0);
+
+	Sleep(10);
+
+	mouse_event(0x00000004, 0, 0, 0, 0);
+
+	Sleep(250);
+
+
+}
+
+
+template <typename T>
+WORD virtualKey(T a)
+{
+
+	switch (a)
+	{
+
+	case 0:  return 0x30;
+		break;
+
+	case 1:  return 0x31;
+		break;
+
+	case 2:  return 0x32;
+		break;
+
+	case 3:  return 0x33;
+		break;
+
+	case 4:  return 0x34;
+		break;
+
+	case 5:  return 0x35;
+		break;
+
+	case 6:  return 0x36;
+		break;
+
+	case 7:  return 0x37;
+		break;
+
+	case 8:  return 0x38;
+		break;
+
+	case 9:  return 0x39;
+		break;
+
+	case 'A': return 0x41;
+		break;
+
+	case 'B': return 0x42;
+		break;
+
+	case 'C': return 0x43;
+		break;
+
+	case 'D': return 0x44;
+		break;
+
+	case 'E': return 0x45;
+		break;
+
+	case 'F': return 0x46;
+		break;
+
+	case 'G': return 0x47;
+		break;
+
+	case 'H': return 0x48;
+		break;
+
+	case 'I': return 0x49;
+		break;
+
+	case 'J': return 0x4A;
+		break;
+
+	case 'K': return 0x4B;
+		break;
+
+	case 'L': return 0x4C;
+		break;
+
+	case 'M': return 0x4D;
+		break;
+
+	case 'N': return 0x4E;
+		break;
+
+	case 'O': return 0x4F;
+		break;
+
+	case 'P': return 0x50;
+		break;
+
+	case 'Q': return 0x51;
+		break;
+
+	case 'R': return 0x52;
+		break;
+
+	case 'S': return 0x53;
+		break;
+
+	case 'T': return 0x54;
+		break;
+
+	case 'U': return 0x55;
+		break;
+
+	case 'V': return 0x56;
+		break;
+
+	case 'W': return 0x57;
+		break;
+
+	case 'X': return 0x58;
+		break;
+
+	case 'Y': return 0x59;
+		break;
+
+	case 'Z': return 0x5A;
+		break;
+
+	default: MessageBox(NULL, "No match in switch-case", NULL, NULL);
+
+	}
+}
+
+
+void keyEvent()
+{
+	while (true)
+	{
+		if (temp == 1)
+		{
+			char name_dup[20];
+			strcpy(name_dup, name);
+			//string name_dup = name;
+			int name_length = strlen(name_dup);
+			//int name_length = name_dup.length();
+			int name_count = 0;
+			char ch;
+
+			while (name_count < name_length)
+			{
+				ch = name_dup[name_count];
+				keybd_event(VK_SHIFT, 0x8f, 0, 0); // Shift Press
+				key = virtualKey(toupper(ch));
+				keyboardPress();
+				keybd_event(VK_SHIFT, 0x8f, KEYEVENTF_KEYUP, 0);
+				name_count++;
+			}
+
+			keybd_event(VK_TAB, 0x8f, 0, 0); // Tab Press
+			keybd_event(VK_TAB, 0x8f, KEYEVENTF_KEYUP, 0); // Tab Release
+
+			temp++;
+
+		}
+
+		else if (temp == 2)
+		{
+			char desg_dup[20];
+			strcpy(desg_dup, designation);
+			int desg_length = strlen(desg_dup);
+			//string desg_dup = designation;
+			//int desg_length = desg_dup.length();
+			int desg_count = 0;
+			char ch;
+
+			while (desg_count < desg_length)
+			{
+				ch = desg_dup[desg_count];
+				keybd_event(VK_SHIFT, 0x8f, 0, 0); // Shift Press
+				key = virtualKey(toupper(ch));
+				keyboardPress();
+				keybd_event(VK_SHIFT, 0x8f, KEYEVENTF_KEYUP, 0);
+				desg_count++;
+			}
+
+			keybd_event(VK_TAB, 0x8f, 0, 0); // Tab Press
+			keybd_event(VK_TAB, 0x8f, KEYEVENTF_KEYUP, 0); // Tab Release
+
+			temp++;
+
+		}
+
+		else if (temp == 0)
+		{
+			int id_dup = id;
+			int id_stack[10] = { 0 };
+			int id_count = 0;
+			int ld;
+			while (id_dup > 0)
+			{
+				ld = id_dup % 10;
+				id_dup /= 10;
+				id_stack[id_count] = ld;
+				id_count++;
+			}
+			id_count--;
+			while (id_count >= 0)
+			{
+				key = virtualKey(id_stack[id_count]);
+				keyboardPress();
+				id_count--;
+			}
+
+			keybd_event(VK_TAB, 0x8f, 0, 0); // Tab Press
+			keybd_event(VK_TAB, 0x8f, KEYEVENTF_KEYUP, 0); // Tab Release
+
+			temp++;
+
+		}
+
+		else if (temp == 3)
+		{
+
+			int sal_dup = salary;
+			int sal_stack[10] = { 0 };
+			int sal_count = 0;
+			int ld;
+			while (sal_dup > 0)
+			{
+				ld = sal_dup % 10;
+				sal_dup /= 10;
+				sal_stack[sal_count] = ld;
+				sal_count++;
+			}
+			sal_count--;
+			while (sal_count >= 0)
+			{
+				key = virtualKey(sal_stack[sal_count]);
+				keyboardPress();
+				sal_count--;
+			}
+
+			//keybd_event(VK_TAB, 0x8f, 0, 0); // Tab Press
+			//keybd_event(VK_TAB, 0x8f, KEYEVENTF_KEYUP, 0); // Tab Release
+
+			temp++;
+
+		}
+
+		else if (temp == 4)
+		{
+			if (strcmp(gender, "f") == 0)
+				femaleRadioButton();
+			else if (strcmp(gender, "m") == 0)
+				maleRadioButton();
+
+			temp++;
+		}
+
+		else if (temp == 5)
+		{
+			buttonClick();
+
+			//keybd_event(VK_RETURN, 0x8f, 0, 0); // Tab Press
+			//keybd_event(VK_RETURN, 0x8f, KEYEVENTF_KEYUP, 0); // Tab Release
+			return;
+		}
+	}
+}
+
+void keyboardPress()
+{
+	INPUT ip;
+
+	// Pause for 5 seconds.
+	Sleep(250);
+
+	//keybd_event(VkKeyScanA('A'), 0x9e, 0, 0);
+
+
+
+	// Set up a generic keyboard event.
+	ip.type = INPUT_KEYBOARD;
+	ip.ki.wScan = NULL; // hardware scan code for key
+	ip.ki.time = 0;
+	ip.ki.dwExtraInfo = 0;
+
+	// Press the "A" key
+	ip.ki.wVk = key; // virtual-key code for the "a" key
+	ip.ki.dwFlags = 0; // 0 for key press
+	SendInput(1, &ip, sizeof(INPUT));
+
+	// Release the "A" key
+	ip.ki.dwFlags = KEYEVENTF_KEYUP; // KEYEVENTF_KEYUP for key release
+	SendInput(1, &ip, sizeof(INPUT));
+
+
+
+}
+
+
+void FileReader()
+{
+	
+	//std::ifstream myfile;
+	ifstream myfile;
+	//myfile.open("D:\\text.txt", std::ifstream::in);
+	myfile.open("D:\\text.txt");
+	
+	while (!myfile.eof())
+	{
+		myfile >> id >> name >> designation >> salary >> gender;
+		//getline(myfile, name);
+		//getline(myfile, designation);
+		//myfile >> salary;
+		MatchingMethod(0, 0);
+	}
+
+	myfile.close();
+}
+
+
+/**
+* @function MatchingMethod
+* @brief Trackbar callback
+*/
+
+void MatchingMethod(int, void*)
+{
+	/// Source image to display
+	Mat img_display;
+	img.copyTo(img_display);
+
+	/*
+
+	TEMPLATE CHECHKING TEXTBOS- WORKING
+
+
+	*/
+
+
+	/// Create the result matrix
+	int result_cols = img.cols - templ.cols + 1;
+	int result_rows = img.rows - templ.rows + 1;
+
+	result.create(result_rows, result_cols, CV_32FC1);
+
+
+	matchTemplate(img, templ, result, CV_TM_CCOEFF_NORMED);
+	cv::threshold(result, result, 0.85, 1., CV_THRESH_TOZERO);
+
+	/*
+	
+	if (start == 0)
+	{
+
+		HWND hWnd = FindWindow(NULL, TEXT("EmployeeDetails"));
+
+		ShowWindow(hWnd, SW_MINIMIZE);
+
+		ShowWindow(hWnd, SW_RESTORE);
+
+		ShowWindow(hWnd, SW_RESTORE);
+
+		Sleep(2000);
+
+		start++;
+
+	}
+	*/
+	l = 0;
+	
+
+	while (true)
+	{
+		double minval, maxval, threshold = 0.85;
+		cv::Point minloc, maxloc;
+		cv::minMaxLoc(result, &minval, &maxval, &minloc, &maxloc, Mat());
+
+		//imshow(image_window, img_display);
+
+		//waitKey(0);
+
+		if (maxval >= threshold)
+		{
+			cv::rectangle(
+				img_display,
+				maxloc,
+				cv::Point(maxloc.x + templ.cols, maxloc.y + templ.rows),
+				CV_RGB(0, 255, 0), 2);
+
+
+			Sleep(250);
+
+			//imshow(image_window, img_display);
+
+			//waitKey(0);
+
+			if (l == 1)
+			{
+				SetCursorPos(maxloc.x -75, maxloc.y -45);
+				
+				mouse_event(0x00000002, 0, 0, 0, 0);
+
+				Sleep(10);
+
+				mouse_event(0x00000004, 0, 0, 0, 0);
+
+				Sleep(1000);
+
+				temp = 0;
+
+				keyEvent();
+				return;
+
+			}
+
+			l++;
+			
+				cv::floodFill(result, maxloc, cv::Scalar(0), 0, cv::Scalar(.1), cv::Scalar(1.));
+		
+		}
+		else
+			break;
+	}
+
+}
+
+void buttonClick()
+{
+	/*
+
+	TEMPLATE CHECHKING TEXTBOS- WORKING
+
+
+	*/
+
+
+	/// Create the result matrix
+	int result_cols = img.cols - button.cols + 1;
+	int result_rows = img.rows - button.rows + 1;
+
+	result.create(result_rows, result_cols, CV_32FC1);
+
+
+	matchTemplate(img, button, result, CV_TM_CCOEFF_NORMED);
+	//cv::threshold(result, result, 0.85, 1., CV_THRESH_TOZERO);
+
+
+	//while (true)
+	//{
+	double minval, maxval;// threshold = 0.85;
+		cv::Point minloc, maxloc;
+		cv::minMaxLoc(result, &minval, &maxval, &minloc, &maxloc, Mat());
+
+		Sleep(250);
+
+			//imshow(image_window, img_display);
+
+			//waitKey(0);
+
+			
+				SetCursorPos(maxloc.x , maxloc.y -150);
+
+				mouse_event(0x00000002, 0, 0, 0, 0);
+
+				Sleep(10);
+
+				mouse_event(0x00000004, 0, 0, 0, 0);
+			
+}
+
+/*
+
+TEMPLATE CHECKING BUTTON- WORKING
+
+*/
+
+
+/*
+
+int but_cols = img.cols - button.cols + 1;
+int but_rows = img.rows - button.rows + 1;
+
+but.create(but_rows, but_cols, CV_32FC1);
+
+
+/// Do the Matching and Normalize
+matchTemplate(img, button, but, match_method);
+normalize(but, but, 0, 1, NORM_MINMAX, -1, Mat());
+
+
+/// Localizing the best match with minMaxLoc
+double minVal; double maxVal; Point minLoc; Point maxLoc;
+
+
+
+minMaxLoc(but, &minVal, &maxVal, &minLoc, &maxLoc, Mat());
+
+
+
+/// For SQDIFF and SQDIFF_NORMED, the best matches are lower values. For all the other methods, the higher the better
+if (match_method == CV_TM_SQDIFF || match_method == CV_TM_SQDIFF_NORMED)
+{
+matchLoc = minLoc;
+
+}
+
+else
+{
+matchLoc = maxLoc;
+}
+
+cv::rectangle(
+img_display,
+matchLoc,
+cv::Point(matchLoc.x + button.cols, matchLoc.y + button.rows),
+CV_RGB(0, 255, 0), 2);
+
+
+waitKey(0);
+
+//Sleep(2000);
+
+return;
+}
+
+void MouseEvents()
+{
+
+Sleep(2000);
+
+SetCursorPos(matchLoc.x , matchLoc.y-50);
+
+mouse_event(0x00000002, 0, 0, 0, 0);
+
+Sleep(10);
+
+mouse_event(0x00000004, 0, 0, 0, 0);
+
+Sleep(2000);
+
+waitKey(0);
+
+
+}
+
+*/
