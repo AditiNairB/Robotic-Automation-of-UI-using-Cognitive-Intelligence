@@ -1,0 +1,291 @@
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include <iostream>
+#include <string.h>
+
+#define WINVER 0x0500
+
+#include <Windows.h>
+
+#include <WinUser.h>
+
+#include <shellAPI.h>
+
+
+using namespace std;
+using namespace cv;
+
+
+/// Global Variables
+Mat img; Mat templ; Mat result; Mat but;
+Mat button;
+char* image_window = "Source Image";
+//char* result_window = "Result window";
+
+
+int match_method;
+int max_Trackbar = 5;
+
+
+
+/// Function Headers
+void MatchingMethod(int, void*);
+
+
+
+/** @function main */
+int main()
+{
+	/// Load image and template
+	img = imread("pleasework.bmp", 1);
+	templ = imread("textbox.bmp", 1);
+	button = imread("button.bmp", 1);
+
+	
+	/// Create windows
+	//namedWindow(image_window, CV_WINDOW_AUTOSIZE);
+	//namedWindow(result_window, CV_WINDOW_AUTOSIZE);
+
+	/// Create Trackbar
+	//char* trackbar_label = "Method: \n 0: SQDIFF \n 1: SQDIFF NORMED \n 2: TM CCORR \n 3: TM CCORR NORMED \n 4: TM COEFF \n 5: TM COEFF NORMED";
+	//createTrackbar(trackbar_label, image_window, &match_method, max_Trackbar, MatchingMethod);
+
+	MatchingMethod(0, 0);
+
+	
+	waitKey(0);
+	return 0;
+}
+
+/**
+* @function MatchingMethod
+* @brief Trackbar callback
+*/
+
+void MatchingMethod(int, void*)
+{
+	/// Source image to display
+	Mat img_display;
+	img.copyTo(img_display);
+
+	/// Create the result matrix
+	int result_cols = img.cols - templ.cols + 1;
+	int result_rows = img.rows - templ.rows + 1;
+
+	result.create(result_rows, result_cols, CV_32FC1);
+	
+
+	matchTemplate(img, templ, result, CV_TM_CCOEFF_NORMED);
+	cv::threshold(result, result, 0.85, 1., CV_THRESH_TOZERO);
+	
+	
+	/*
+	imshow(image_window, img_display);
+	imshow(result_window, result);
+
+	*/
+
+	int count = 0;
+	
+	/*
+	string filename = "C:\\Users\\ADITI\\Documents\\Visual Studio 2017\\Projects\\MakeItWork\\MakeItWork\\bin\\Debug\\MakeItWork.exe";
+
+	HINSTANCE k = ShellExecute(NULL, "open", filename.c_str(), NULL, NULL, 1);
+
+	*/
+
+	/*
+	
+	while (true)
+	{
+		double minval, maxval, threshold = 0.85;
+		cv::Point minloc, maxloc;
+		cv::minMaxLoc(result, &minval, &maxval, &minloc, &maxloc,Mat());
+
+		if (maxval >= threshold)
+		{
+			rectangle(
+				img_display,
+				maxloc,
+				cv::Point(maxloc.x + templ.cols, maxloc.y + templ.rows),
+				CV_RGB(0, 255, 0), 2
+			);
+			
+			int a = (int)maxloc.x;
+			int b = (int)maxloc.y;
+
+			count++;
+			
+			/*
+			if(SetCursorPos(a, b))
+			{
+				MessageBox(NULL, "SUCCESS", NULL, NULL);
+			}
+			
+
+			//mouse_event(MOUSEEVENTF_LEFTDOWN, a, b, 0, 0);
+
+			//mouse_event(MOUSEEVENTF_LEFTUP, a, b, 0, 0);
+			
+			INPUT ip2;
+
+			ip2.type = INPUT_MOUSE;
+			ip2.mi.dx = a;
+			ip2.mi.dy = b;
+			ip2.mi.time = 0;
+			ip2.mi.dwExtraInfo = 0;
+				
+
+			//Prepare a keyup event
+			ip2.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+			
+			::SendInput(1, &ip2, sizeof(INPUT));
+
+			::ZeroMemory(&ip2, sizeof(INPUT));
+			ip2.type = INPUT_MOUSE;
+			ip2.mi.dx = a;
+			ip2.mi.dy = b;
+			ip2.mi.time = 0;
+			ip2.mi.dwExtraInfo = 0;
+			ip2.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+			::SendInput(1, &ip2, sizeof(INPUT));
+			Sleep(1000);
+
+			
+
+			if (count == 2||count==3)
+			{
+				INPUT ip;
+
+				//Sleep(5000);
+
+
+			   //Set up the INPUT structure
+				ip.type = INPUT_KEYBOARD;
+				ip.ki.time = 0;
+				ip.ki.wVk = 0; //We're doing scan codes instead
+				ip.ki.dwExtraInfo = 0;
+
+				//This let's you do a hardware scan instead of a virtual keypress
+				ip.ki.dwFlags = KEYEVENTF_UNICODE;
+				ip.ki.wScan = 0x1E;  //Set a unicode character to use (A)
+
+									 //Send the press
+				SendInput(1, &ip, sizeof(INPUT));
+
+
+
+				//Prepare a keyup event
+				ip.ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP;
+				SendInput(1, &ip, sizeof(INPUT));
+
+
+
+				//Sleep(1000);
+
+				cv::floodFill(result, maxloc, cv::Scalar(0), 0, cv::Scalar(.1), cv::Scalar(1.));
+			}
+		
+		}
+		else
+			break;
+			
+	}
+	*/
+
+
+	/// Create the result matrix
+	int but_cols = img.cols - templ.cols + 1;
+	int but_rows = img.rows - templ.rows + 1;
+
+	but.create(but_rows, but_cols, CV_32FC1);
+
+
+	/// Do the Matching and Normalize
+	matchTemplate(img, button, result, match_method);
+	normalize(result, result, 0, 1, NORM_MINMAX, -1, Mat());
+
+
+	/// Localizing the best match with minMaxLoc
+	double minVal; double maxVal; Point minLoc; Point maxLoc;
+	Point matchLoc;
+
+
+	minMaxLoc(result, &minVal, &maxVal, &minLoc, &maxLoc, Mat());
+
+	
+
+	/// For SQDIFF and SQDIFF_NORMED, the best matches are lower values. For all the other methods, the higher the better
+	if (match_method == CV_TM_SQDIFF || match_method == CV_TM_SQDIFF_NORMED)
+	{
+	matchLoc = minLoc;
+
+	}
+
+	else
+	{
+	matchLoc = maxLoc;
+	}
+
+	
+
+	/// Show me what you
+	//rectangle(img_display, matchLoc, Point(matchLoc.x + templ.cols, matchLoc.y + templ.rows), Scalar::all(0), 2, 8, 0);
+	//rectangle(result, matchLoc, Point(matchLoc.x + templ.cols, matchLoc.y + templ.rows), Scalar::all(0), 2, 8, 0);
+	
+	int c = (int)(matchLoc.x+but.cols);
+	int d = (int)(matchLoc.y+but.rows);
+
+	/*
+	if (SetCursorPos(a, b))
+	{
+		MessageBox(NULL, "UPDATE SUCCESS", NULL, NULL);
+	}
+
+	mouse_event(MOUSEEVENTF_LEFTDOWN, a, b, 0, 0);
+
+	mouse_event(MOUSEEVENTF_LEFTUP, a, b, 0, 0);
+	
+	imshow(image_window, img_display);
+	*/
+
+	
+	
+	INPUT ip3;
+
+	ip3.type = INPUT_MOUSE;
+	ip3.mi.dx = c;
+	ip3.mi.dy = d;
+	ip3.mi.time = 0;
+	ip3.mi.dwExtraInfo = 0;
+
+	int work = 0;
+
+	string filename = "C:\\Users\\ADITI\\Documents\\Visual Studio 2017\\Projects\\MakeItWork\\MakeItWork\\bin\\Debug\\MakeItWork.exe";
+
+	HINSTANCE k = ShellExecute(NULL, "open", filename.c_str(), NULL, NULL, 1);
+
+	while (work <= 2)
+	{
+		//Prepare a keyup event
+		ip3.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+
+		::SendInput(1, &ip3, sizeof(INPUT));
+
+		::ZeroMemory(&ip3, sizeof(INPUT));
+		ip3.type = INPUT_MOUSE;
+		ip3.mi.dx = c;
+		ip3.mi.dy = d;
+		ip3.mi.time = 0;
+		ip3.mi.dwExtraInfo = 0;
+		ip3.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+		::SendInput(1, &ip3, sizeof(INPUT));
+		Sleep(1000);
+
+		work++;
+	}
+	//MessageBox(NULL, "UPDATE SUCCESS", NULL, NULL);
+		
+	return;
+}
+
